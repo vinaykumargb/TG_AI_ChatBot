@@ -92,7 +92,7 @@ def markdown_to_html(text: str) -> str:
 ALLOWED_CHATS = {
     -1001991761209: None,   # normal group
     -1003069777509: 2,       # forum group thread ID 2
-    -1003018799293: 3 #CSQ
+    -1003018799293: 308 #CSQ
 }
 
 def is_allowed(message):

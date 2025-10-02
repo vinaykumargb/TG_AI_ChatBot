@@ -90,7 +90,6 @@ def markdown_to_html(text: str) -> str:
 # -------------------------------
 # Map allowed chats and thread IDs (None for normal chat)
 ALLOWED_CHATS = {
-    -1001991761209: None,   # normal group
     -1003069777509: 2,       # forum group thread ID 2
     -1003018799293: 308 #CSQ
 }
@@ -111,12 +110,13 @@ def is_allowed(message):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat.id
     user_text = update.message.text
-
-    if chat_id not in ALLOWED_CHATS:
+    topic_id = update.message.message_thread_id
+    
+    if topic_id not in [308, 2]:
         return  # ignore other chats
-
+    
     thread_id = ALLOWED_CHATS[chat_id]  # None if normal chat
-
+    
     # Send "Thinking..." placeholder in the correct thread
     placeholder = await context.bot.send_message(
         chat_id=chat_id,
@@ -147,7 +147,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     thread_id = update.message.message_thread_id if update.message else None  
-
+    
     await context.bot.send_message(
         chat_id=chat_id,
         text=(
@@ -163,16 +163,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message_thread_id=thread_id
     )
 
-"""
 def main():
-    app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    print("✅ Gemini AI Telegram Bot is running...")
-    app.run_polling()
-"""
-def main():
+    import time
     while True:
         try:
             app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
@@ -181,31 +173,55 @@ def main():
 
             print("✅ Gemini AI Telegram Bot is running...")
             app.run_polling(close_loop=False)
+
         except Exception as e:
-            print(f"Bot crashed: {e}, retrying in 5s...")
-            import time
+            # Detect Telegram getUpdates Conflict
+            if "terminated by other getUpdates request" in str(e):
+                print("⚠️ Conflict detected: Another bot instance is running. Retrying in 5s...")
+            else:
+                print(f"Bot crashed: {e}, retrying in 5s...")
             time.sleep(5)
+
+
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+
+class ReusableHTTPServer(HTTPServer):
+    allow_reuse_address = True  # Allow immediate rebinding of port
 
 def start_dummy_server():
     class Handler(BaseHTTPRequestHandler):
-      def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is running!")
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot is running!")
 
-      def do_HEAD(self):
-        self.send_response(200)
-        self.end_headers()
+        def do_HEAD(self):
+            self.send_response(200)
+            self.end_headers()
 
-      def do_POST(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot is running!")
-    
+        def do_POST(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot is running!")
+
     port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), Handler)
+    server = ReusableHTTPServer(("127.0.0.1", port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
+def console_listener():
+    while True:
+        cmd = input()
+        if cmd.strip().lower() == "end":
+            print("⚡ 'end' command received. Shutting down bot...")
+            os._exit(0)
+
 if __name__ == "__main__":
+    # Start the dummy server
     start_dummy_server()
+
+    # Start console listener thread
+    threading.Thread(target=console_listener, daemon=True).start()
+
+    # Start the bot
     main()

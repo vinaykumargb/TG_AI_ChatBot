@@ -82,10 +82,6 @@ def markdown_to_html(text: str) -> str:
     text = re.sub(r"^\s*---\s*$", r"<hr>", text, flags=re.MULTILINE)
     return text
 
-# -------------------------------
-# 4️⃣ Handlers
-# -------------------------------
-# -------------------------------
 # 4️⃣ Handle user messages
 # -------------------------------
 # Map allowed chats and thread IDs (None for normal chat)

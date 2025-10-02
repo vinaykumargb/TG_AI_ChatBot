@@ -206,7 +206,7 @@ def start_dummy_server():
             self.wfile.write(b"Bot is running!")
 
     port = int(os.environ.get("PORT", 10000))
-    server = ReusableHTTPServer(("127.0.0.1", port), Handler)
+    server = ReusableHTTPServer(("0.0.0.0", port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
 def console_listener():

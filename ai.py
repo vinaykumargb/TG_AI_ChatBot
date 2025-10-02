@@ -5,6 +5,8 @@ import re
 from telegram import Update
 from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # -------------------------------
 # 1️⃣ Configure keys
@@ -39,7 +41,7 @@ async def ask_gemini(thread_key: str, user_text: str) -> str:
     user_memory[thread_key] = user_memory[thread_key][-MAX_MEMORY:]
 
     # Prepare payload
-    contents = [{"parts": [{"text": f"[Please keep responses under 4000 characters, and provide 1 empty newline space between statements/bullet points; don't forget to give numbering/hyphen to each points. You should keep the responses professional and upsc cse relavant.]\n{msg['role'].title()}: {msg['content']}"}]} 
+    contents = [{"parts": [{"text": f"[Please keep responses under 4000 characters, and provide 1 empty newline space between statements/bullet points; don't forget to give hyphen to each points. You should keep the responses professional and upsc cse relavant.]\n{msg['role'].title()}: {msg['content']}"}]} 
                 for msg in user_memory[thread_key]]
     payload = {"contents": contents}
 
@@ -161,6 +163,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         message_thread_id=thread_id
     )
 
+"""
 def main():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
@@ -168,6 +171,32 @@ def main():
 
     print("✅ Gemini AI Telegram Bot is running...")
     app.run_polling()
+"""
+def main():
+    while True:
+        try:
+            app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
+            app.add_handler(CommandHandler("start", start))
+            app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+            print("✅ Gemini AI Telegram Bot is running...")
+            app.run_polling(close_loop=False)
+        except Exception as e:
+            print(f"Bot crashed: {e}, retrying in 5s...")
+            import time
+            time.sleep(5)
+
+def start_dummy_server():
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot is running!")
+
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
 
 if __name__ == "__main__":
+    start_dummy_server()
     main()

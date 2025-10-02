@@ -1,18 +1,21 @@
-# Use official Python image
-FROM python:3.12-slim
+# Use official Python 3.11 image
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Copy local files
-COPY . /app
+# Copy requirements
+COPY requirements.txt .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set environment variables
-ENV TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
-ENV GEMINI_API_KEY=${GEMINI_API_KEY}
+# Copy all source files
+COPY . .
 
-# Run your bot
+# Set environment variables (optional, can override in Render dashboard)
+ENV AITOKEN=your_telegram_token
+ENV GEMINI_API_KEY=your_gemini_api_key
+
+# Command to run your bot
 CMD ["python", "ai.py"]

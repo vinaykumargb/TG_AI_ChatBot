@@ -7,6 +7,23 @@ from telegram.constants import ParseMode, ChatAction
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes, filters
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from webContent import get_readable_content
+
+def get_webContent(text: str) -> str:
+    """
+    Finds all website links in text, replaces them
+    with their readable web content.
+    """
+
+    def replace_link(match):
+        url = match.group()
+        content = get_readable_content(url)
+        # If fetching fails, keep the original link
+        if content.startswith("Failed to fetch"):
+            return url
+        return content
+
+    return re.sub(r'https?://\S+', replace_link, text)
 
 # -------------------------------
 # 1️⃣ Configure keys
@@ -36,7 +53,7 @@ async def ask_gemini(thread_key: str, user_text: str) -> str:
         user_memory[thread_key] = []
 
     # Add user message
-    user_memory[thread_key].append({"role": "user", "content": user_text})
+    user_memory[thread_key].append({"role": "user", "content": get_webContent(user_text)})
     # Keep last MAX_MEMORY messages
     user_memory[thread_key] = user_memory[thread_key][-MAX_MEMORY:]
 

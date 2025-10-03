@@ -58,7 +58,7 @@ async def ask_gemini(thread_key: str, user_text: str) -> str:
     user_memory[thread_key] = user_memory[thread_key][-MAX_MEMORY:]
 
     # Prepare payload
-    contents = [{"parts": [{"text": f"[Please keep responses under 4000 characters, and provide 1 empty newline space between statements/bullet points; don't forget to give hyphen to each points. You should keep the responses professional and upsc cse relavant.]\n{msg['role'].title()}: {msg['content']}"}]} 
+    contents = [{"parts": [{"text": f"[Please keep responses under 4000 characters, and provide 1 empty newline space between statements/bullet points; don't forget to give hyphen to each points. You should keep the responses professional and upsc cse relavant. Your prompt with website link will be replaced by that website content, so answer user questions regarding this accordingly.]\n{msg['role'].title()}: {msg['content']}"}]} 
                 for msg in user_memory[thread_key]]
     payload = {"contents": contents}
 
@@ -99,6 +99,10 @@ def markdown_to_html(text: str) -> str:
     text = re.sub(r"^\s*---\s*$", r"<hr>", text, flags=re.MULTILINE)
     return text
 
+# -------------------------------
+# 4️⃣ Handlers
+# -------------------------------
+# -------------------------------
 # 4️⃣ Handle user messages
 # -------------------------------
 # Map allowed chats and thread IDs (None for normal chat)
